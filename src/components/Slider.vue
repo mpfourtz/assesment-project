@@ -111,23 +111,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-
-.mySwiper {
-  padding: 20px;
-  height: 350px;
-}
-.swiper-pagination-clickable .swiper-pagination-bullet {
-  color: #FFFFFF !important;
-}
-
-.slide-content {
-  transition: transform 0.3s ease-in-out;
-  display: flex;
-  align-items: center;
-}
-.slide:hover .slide-content {
-  transform: scale(1.05);
-}
-</style>
