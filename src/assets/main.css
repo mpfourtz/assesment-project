@@ -35,7 +35,8 @@ header{
 .mySwiper{
   margin-bottom:50px;
   padding: 20px;
-  height: 400px;
+  height: 520px;
+  margin-top:50px
 }
 .bg-foot{
   background-color: rgba(0, 0, 0, 0.29);
