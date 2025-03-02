@@ -7,6 +7,7 @@ import MovieFilter from '@/components/MovieFilter.vue';
 const movies = ref<any[]>([]);
 const sortBy = ref('popularity');
 const selectedGenres = ref<string[]>([]);
+const page = ref(1);  // Track the current page
 
 const genreMap: Record<string, number> = {
   'Action': 28, 'Adventure': 12, 'Animation': 16, 'Comedy': 35, 'Crime': 80,
@@ -25,11 +26,11 @@ const fetchMovies = async () => {
     const genreQuery = genreIds ? `&with_genres=${genreIds}` : '';
     const sortQuery = `&sort_by=${sortBy.value}.desc`;
 
+    // Use the page number in the API request
     const response = await axios.get(
-      `https://api.themoviedb.org/3/discover/movie?api_key=9fabcfbbc014bf7f64c9dcf89da12f67${sortQuery}${genreQuery}`
+      `https://api.themoviedb.org/3/discover/movie?api_key=9fabcfbbc014bf7f64c9dcf89da12f67${sortQuery}${genreQuery}&page=${page.value}`
     );
-
-    movies.value = response.data.results;
+    movies.value = [...movies.value, ...response.data.results];  // Append new movies to the list
   } catch (error) {
     console.error('API Error:', error);
   }
@@ -38,16 +39,18 @@ const fetchMovies = async () => {
 const updateFilter = (filter: { sortBy: string, selectedGenres: string[] }) => {
   sortBy.value = filter.sortBy;
   selectedGenres.value = filter.selectedGenres;
+  page.value = 1;  // Reset to the first page when filter is updated
+  movies.value = [];  // Clear existing movies
   fetchMovies();
 };
 
 const route = useRoute();
 
 watch(() => route.query.category, (newCategory) => {
-   //window.scrollTo(0, 0);
-    //window.location.reload();
   if (newCategory && typeof newCategory === 'string') {
     selectedGenres.value = newCategory.split(',');
+    page.value = 1;  // Reset page when category is changed
+    movies.value = [];  // Clear existing movies
     fetchMovies();
   }
 });
@@ -55,9 +58,13 @@ watch(() => route.query.category, (newCategory) => {
 onMounted(() => {
   fetchMovies();
 });
+
+// Load more function
+const loadMoreMovies = () => {
+  page.value += 1;  // Increment page number
+  fetchMovies();
+};
 </script>
-
-
 
 <template>
   <div class="back-greyed"></div>
@@ -69,39 +76,55 @@ onMounted(() => {
       </h2>
     </div>
     
-    <div class="grid grid-cols-5 gap-70">
-      <div>
-        <MovieFilter @update-filter="updateFilter" />
-      </div>
-      <div class="grid grid-cols-4 gap-6 col-span-4">
-        <div v-for="movie in movies" :key="movie.id" class="relative group">
-          <div class="relative overflow-hidden rounded-lg">
-            <span class="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 text-xs rounded z-10">
-              {{ movie.vote_average.toFixed(1) }}
-            </span>
-            <img 
-              :src="movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg'"
-              alt="Movie Poster"
-              class="rounded-lg transition-all duration-300 imgs-100"
-              style="min-height: 370px;"
-            />
-            <div class="absolute inset-0 bg-black bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center">
-              <div class="flex items-center space-x-2 text-white text-lg font-semibold">
-                <span class="text-yellow-400 text-2xl">⭐</span>
-                <span>{{ movie.vote_average.toFixed(1) }}</span>
+    <!-- Movie List Container with Flexbox -->
+    <div class="flex flex-col gap-6">
+      <div class="grid grid-cols-5 gap-70">
+        <div>
+          <MovieFilter @update-filter="updateFilter" />
+        </div>
+        <div class="grid grid-cols-4 gap-6 col-span-4">
+          <div v-for="movie in movies" :key="movie.id" class="relative group">
+            <div class="relative overflow-hidden rounded-lg">
+              <span class="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 text-xs rounded z-10">
+                {{ movie.vote_average.toFixed(1) }}
+              </span>
+              <img 
+                :src="movie.poster_path ? `https://image.tmdb.org/t/p/original${movie.poster_path}` : '/placeholder.jpg'"
+                alt="Movie Poster"
+                class="rounded-lg transition-all duration-300 imgs-100"
+                style="min-height: 370px; max-height: 370px;"
+              />
+              <div class="absolute inset-0 bg-black bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center">
+                <div class="flex items-center space-x-2 text-white text-lg font-semibold">
+                  <span class="text-yellow-400 text-2xl">⭐</span>
+                  <span>{{ movie.vote_average.toFixed(1) }}</span>
+                </div>
+                <router-link :to="`/movie/${movie.id}`" class="cursor-pointer">
+                  <button class="mt-3 px-6 py-2 bg-red-600 text-white font-semibold text-sm rounded-full cursor-pointer">
+                    VIEW
+                  </button>
+                </router-link>
               </div>
-              <router-link :to="`/movie/${movie.id}`" class="cursor-pointer">
-                <button class="mt-3 px-6 py-2 bg-red-600 text-white font-semibold text-sm rounded-full cursor-pointer">
-                  VIEW
-                </button>
-              </router-link>
             </div>
-          </div>
 
-          <div class="text-white font-normal mt-2">{{ movie.title }}</div>
-          <div class="text-gray-400">{{ movie.release_date.split('-')[0] }}</div>
+            <div class="text-white font-normal mt-2">{{ movie.title }}</div>
+            <div class="text-gray-400">{{ movie.release_date.split('-')[0] }}</div>
+          </div>
+        
         </div>
       </div>
+      <div class="grid grid-cols-5 gap-70 mt-15">
+        <div class=""></div>
+        <div class="flex justify-center w-full mt-6 col-span-4">
+          <button 
+            @click="loadMoreMovies"
+            class="px-6 py-2 bg-red-600 text-white font-semibold text-sm rounded-full cursor-pointer"
+          >
+            Load More
+          </button>
+        </div>
+      </div>
+      <!-- Load More Button at the bottom of the movie list -->
     </div>
   </div>
 </template>
