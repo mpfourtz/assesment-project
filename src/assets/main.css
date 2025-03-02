@@ -1,6 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 @import './base.css';
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 #app {
   margin: 0 auto;
   font-weight: normal;
@@ -8,6 +8,23 @@
 body{
   background-color: #1E232B;
   font-family: 'Montserrat', sans-serif;
+}
+.bg-hero {
+  aspect-ratio: 25 / 9;
+}
+.bg-postt{
+  position: relative;
+  margin-top: -4rem;
+  background-size: cover;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+.no-hover:hover{
+  background-color: none;
+}
+.highlight {
+
+  font-weight: bold;
 }
 header{
   height: 74px;
@@ -35,7 +52,7 @@ header{
 .mySwiper{
   margin-bottom:50px;
   padding: 20px;
-  height: 520px;
+  height: 450px;
   margin-top:50px
 }
 .bg-foot{
@@ -111,3 +128,4 @@ a:hover{
   width: 100%;
   display: block;
 }
+

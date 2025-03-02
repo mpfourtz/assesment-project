@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineEmits } from 'vue';
+import { ref, defineEmits, watch } from 'vue';
 
 const emit = defineEmits(['update-filter']);
 
@@ -11,22 +11,20 @@ const genres = [
   'Drama', 'Family', 'Fantasy', 'History', 'Horror'
 ];
 
-// Emit filter changes
 const updateFilter = () => {
   emit('update-filter', { sortBy: sortBy.value, selectedGenres: selectedGenres.value });
 };
+
+watch(selectedGenres, updateFilter);
 </script>
 
 <template>
   <div class="filter-container">
-    <!-- Sort Dropdown -->
     <h3 class="text-lg font-semibold mb-2">Sort Result By</h3>
     <select v-model="sortBy" @change="updateFilter" class="filter-dropdown">
       <option value="popularity">Popularity</option>
       <option value="release_date">Release Date</option>
     </select>
-
-    <!-- Genre Filter -->
     <h3 class="text-lg font-semibold mt-4 mb-2 border-b border-gray-600 pb-1">Genres</h3>
     <div v-for="genre in genres" :key="genre" class="flex justify-between items-center py-2">
       <label class="text-sm">{{ genre }}</label>
@@ -35,13 +33,13 @@ const updateFilter = () => {
         :value="genre"
         v-model="selectedGenres"
         class="custom-checkbox"
+        @change="updateFilter"
       />
     </div>
   </div>
 </template>
 
 <style scoped>
-/* 🔹 Filter Container with Gradient Background */
 .filter-container {
   width: 260px;
   padding: 16px;
@@ -50,7 +48,6 @@ const updateFilter = () => {
   color: white;
 }
 
-/* 🔹 Sort Dropdown */
 .filter-dropdown {
   width: 100%;
   padding: 8px;
@@ -61,7 +58,6 @@ const updateFilter = () => {
   outline: none;
 }
 
-/* 🔹 Custom Checkbox */
 .custom-checkbox {
   appearance: none;
   width: 18px;
@@ -73,7 +69,6 @@ const updateFilter = () => {
   background-color: #2A2A2A;
 }
 
-/* 🔹 Checked state with checkmark */
 .custom-checkbox:checked {
   background-color: red;
   border-color: red;

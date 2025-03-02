@@ -11,10 +11,7 @@ const routes = [
     path: '/movies',
     component: Movie, // Set up the Movie page route
   },
-  {
-    path: '/detail',
-    component: Detail, // Set up the Movie page route
-  },
+  { path: '/movie/:id', component: Detail, props: true },
 ];
 
 const router = createRouter({

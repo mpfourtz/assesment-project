@@ -1,88 +1,107 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import axios from 'axios';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import MovieFilter from '@/components/MovieFilter.vue';
-import Image from '../assets/images/image-movies.png';
 
-const movies = ref([
-  { title: 'Wonder Woman 1984', year: 2020, rating: 7.0, genre: 'Action' },
-  { title: 'Inception', year: 2010, rating: 8.8, genre: 'Sci-Fi' },
-  { title: 'The Dark Knight', year: 2008, rating: 9.0, genre: 'Action' },
-  { title: 'Interstellar', year: 2014, rating: 8.6, genre: 'Sci-Fi' },
-  { title: 'Joker', year: 2019, rating: 8.5, genre: 'Drama' }
-]);
-
+const movies = ref<any[]>([]);
 const sortBy = ref('popularity');
 const selectedGenres = ref<string[]>([]);
 
-// Update filters when user interacts with MovieFilter.vue
-const updateFilter = (filterData: { sortBy: string; selectedGenres: string[] }) => {
-  sortBy.value = filterData.sortBy;
-  selectedGenres.value = filterData.selectedGenres;
+const genreMap: Record<string, number> = {
+  'Action': 28, 'Adventure': 12, 'Animation': 16, 'Comedy': 35, 'Crime': 80,
+  'Documentary': 99, 'Drama': 18, 'Family': 10751, 'Fantasy': 14, 'History': 36,
+  'Horror': 27, 'Music': 10402, 'Mystery': 9648, 'Romance': 10749, 'Science Fiction': 878,
+  'TV Movie': 10770, 'Thriller': 53, 'War': 10752, 'Western': 37
 };
 
-// Computed property to filter movies
-const filteredMovies = computed(() => {
-  let filtered = movies.value;
+const fetchMovies = async () => {
+  try {
+    const genreIds = selectedGenres.value
+      .map(genre => genreMap[genre])
+      .filter(id => id !== undefined)
+      .join(',');
 
-  // Filter by genre
-  if (selectedGenres.value.length > 0) {
-    filtered = filtered.filter(movie => selectedGenres.value.includes(movie.genre));
-  }
+    const genreQuery = genreIds ? `&with_genres=${genreIds}` : '';
+    const sortQuery = `&sort_by=${sortBy.value}.desc`;
 
-  // Sort movies
-  if (sortBy.value === 'release_date') {
-    return filtered.sort((a, b) => b.year - a.year);
-  } else {
-    return filtered.sort((a, b) => b.rating - a.rating);
+    const response = await axios.get(
+      `https://api.themoviedb.org/3/discover/movie?api_key=9fabcfbbc014bf7f64c9dcf89da12f67${sortQuery}${genreQuery}`
+    );
+
+    movies.value = response.data.results;
+  } catch (error) {
+    console.error('API Error:', error);
   }
+};
+
+const updateFilter = (filter: { sortBy: string, selectedGenres: string[] }) => {
+  sortBy.value = filter.sortBy;
+  selectedGenres.value = filter.selectedGenres;
+  fetchMovies();
+};
+
+const route = useRoute();
+
+watch(() => route.query.category, (newCategory) => {
+   //window.scrollTo(0, 0);
+    //window.location.reload();
+  if (newCategory && typeof newCategory === 'string') {
+    selectedGenres.value = newCategory.split(',');
+    fetchMovies();
+  }
+});
+
+onMounted(() => {
+  fetchMovies();
 });
 </script>
 
+
+
 <template>
   <div class="back-greyed"></div>
-    <div class="top-post relative w-1200px">
-      <div class="flex justify-between items-center pb-10">
-        <div>
-          <h2 class="text-white text-xl font-semibold relative">
-            Movies
-            <span class="absolute w-20 h-1 bg-red-500 -top-2 left-0"></span>
-          </h2>
-        </div>
-      </div>
-      <div class="grid grid-cols-5 gap-70">
-      <!-- Filter Sidebar -->
-      <div class="">
+  <div class="top-post relative w-1200px">
+    <div class="flex justify-between items-center pb-10">
+      <h2 class="text-white text-xl font-semibold relative">
+        Movies
+        <span class="absolute w-20 h-1 bg-red-500 -top-2 left-0"></span>
+      </h2>
+    </div>
+    
+    <div class="grid grid-cols-5 gap-70">
+      <div>
         <MovieFilter @update-filter="updateFilter" />
       </div>
-      <!-- Movies Grid -->
-          <div class="grid grid-cols-4 gap-6 col-span-4">
-            <div v-for="index in 6" :key="index" class="relative group">
-              <div class="relative overflow-hidden rounded-lg">
-                <!-- Rating Badge (Always Visible) -->
-                <span class="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 text-xs rounded z-10">
-                  7.0
-                </span>
-                
-                <!-- Movie Image -->
-                <img :src="Image" alt="Movie Poster" class="rounded-lg transition-all duration-300 imgs-100">
-                
-                <!-- Darker Hover Overlay -->
-                <div class="absolute inset-0 bg-black bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center">
-                  <div class="flex items-center space-x-2 text-white text-lg font-semibold">
-                    <span class="text-yellow-400 text-2xl">⭐</span>
-                    <span>6.5</span>
-                  </div>
-                  <div class="text-white text-sm mt-1">Action</div>
-                  <button class="mt-3 px-6 py-2 bg-red-600 text-white font-semibold text-sm rounded-full">
-                    <router-link to="/detail">VIEW</router-link>
-                  </button>
-                </div>
+      <div class="grid grid-cols-4 gap-6 col-span-4">
+        <div v-for="movie in movies" :key="movie.id" class="relative group">
+          <div class="relative overflow-hidden rounded-lg">
+            <span class="absolute top-2 right-2 bg-gray-800 text-white px-2 py-1 text-xs rounded z-10">
+              {{ movie.vote_average.toFixed(1) }}
+            </span>
+            <img 
+              :src="movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg'"
+              alt="Movie Poster"
+              class="rounded-lg transition-all duration-300 imgs-100"
+              style="min-height: 370px;"
+            />
+            <div class="absolute inset-0 bg-black bg-black/80 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center">
+              <div class="flex items-center space-x-2 text-white text-lg font-semibold">
+                <span class="text-yellow-400 text-2xl">⭐</span>
+                <span>{{ movie.vote_average.toFixed(1) }}</span>
               </div>
-              <!-- Movie Title and Year -->
-              <div class="text-white font-normal mt-2">Wonder Woman 1984</div>
-              <div class="text-gray-400">2020</div>
+              <router-link :to="`/movie/${movie.id}`" class="cursor-pointer">
+                <button class="mt-3 px-6 py-2 bg-red-600 text-white font-semibold text-sm rounded-full cursor-pointer">
+                  VIEW
+                </button>
+              </router-link>
             </div>
           </div>
+
+          <div class="text-white font-normal mt-2">{{ movie.title }}</div>
+          <div class="text-gray-400">{{ movie.release_date.split('-')[0] }}</div>
+        </div>
       </div>
-   </div>
+    </div>
+  </div>
 </template>

@@ -1,30 +1,66 @@
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import "swiper/css";
+import "swiper/css/pagination";
+import { Pagination, Autoplay } from "swiper/modules";
+
+// Reactive variable for storing movies
+const movies = ref<any[]>([]);
+
+// Fetch movies from API
+const fetchMovies = async () => {
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}3/discover/movie?api_key=9fabcfbbc014bf7f64c9dcf89da12f67`);
+    movies.value = response.data.results; // Assuming API returns a `results` array
+  } catch (error) {
+    console.error("Error fetching movies:", error);
+  }
+};
+
+// Fetch movies on component mount
+onMounted(fetchMovies);
+</script>
 <template>
   <swiper
     :slidesPerView="2.5"
     :spaceBetween="40"
     :loop="true"
     :centeredSlides="true"
-    :pagination="{ clickable: true }"
-    :modules="[Pagination]"
+    :autoplay="{ delay: 2000, disableOnInteraction: false }"
+    :pagination="{
+            enabled: true,
+            clickable: true,
+          }"
+    :modules="[Pagination, Autoplay]"
     class="mySwiper"
   >
     <swiper-slide v-for="movie in movies" :key="movie.id" class="slide">
-      <div class="slide-content flex text-white rounded-lg overflow-hidden">
-        <!-- Movie Poster -->
-        <div class="w-3/4 relative">
+      <div class="grid grid-cols-[max-content_1fr] items-center">
+        <div class="aspect-10/16 max-w-56">
           <img
             :src="movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder.jpg'"
             alt="Movie Poster"
             class="w-full h-full object-cover"
           />
         </div>
-
-        <!-- Movie Info -->
-        <div class="w-2/2 p-4 flex flex-col justify-center bg-black rounded-r-lg">
-          <div class="text-yellow-400 font-bold text-lg">⭐ {{ movie.vote_average.toFixed(1) }}</div>
-          <h2 class="text-lg font-bold">{{ movie.title }}</h2>
-          <p class="text-xs text-gray-400">{{ movie.release_date.split('-')[0] }} • {{ movie.genre_ids[0] || "Unknown" }}</p>
-          <p class="text-xs mt-2 text-gray-300">{{ movie.overview }}</p>
+        <div class="h-[90%] w-full flex flex-col gap-1 bg-black p-6 text-white">
+          <div class="flex items-center gap-2">
+            <span class="i-ph-star-fill block h-4 w-4 text-[#FFB802]" />
+              <span class="text-lg font-semibold">⭐ {{ movie.vote_average.toFixed(1) }}</span>
+              </div>
+              <h1 class="line-clamp-2 text-2xl font-semibold">
+                {{ movie.title }}
+              </h1>
+              <div class="flex items-center gap-1.5">
+                <span class="text-lg">{{ movie.release_date.split('-')[0] }} • {{ movie.genre_ids[0] || "Unknown" }}</span>
+                <span class="inline-block h-1.5 w-1.5 rounded-full bg-white/50" />
+                <span class="text-lg">aaa</span>
+              </div>
+              <div class="line-clamp-7 text-xs leading-5">
+                {{ movie.overview }}
+              </div>
         </div>
       </div>
     </swiper-slide>
@@ -35,31 +71,4 @@
     </div>
   </swiper>
 </template>
-
-
-
-<script setup lang="ts">
-import { ref, onMounted } from "vue";
-import axios from "axios";
-import { Swiper, SwiperSlide } from "swiper/vue";
-import "swiper/css";
-import "swiper/css/pagination";
-import { Pagination } from "swiper/modules";
-
-// Reactive variable for storing movies
-const movies = ref<any[]>([]);
-
-// Fetch movies from API
-const fetchMovies = async () => {
-  try {
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}`);
-    movies.value = response.data.results; // Assuming API returns a `results` array
-  } catch (error) {
-    console.error("Error fetching movies:", error);
-  }
-};
-
-// Fetch movies on component mount
-onMounted(fetchMovies);
-</script>
 
