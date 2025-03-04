@@ -6,22 +6,45 @@ import "swiper/css";
 import "swiper/css/pagination";
 import { Pagination, Autoplay } from "swiper/modules";
 
-// Reactive variable for storing movies
+// Reactive variables
 const movies = ref<any[]>([]);
+const genres = ref<Record<number, string>>({});
 
 // Fetch movies from API
 const fetchMovies = async () => {
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}3/discover/movie?api_key=9fabcfbbc014bf7f64c9dcf89da12f67`);
-    movies.value = response.data.results; // Assuming API returns a `results` array
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}3/discover/movie?api_key=9fabcfbbc014bf7f64c9dcf89da12f67`
+    );
+    movies.value = response.data.results;
   } catch (error) {
     console.error("Error fetching movies:", error);
   }
 };
 
-// Fetch movies on component mount
-onMounted(fetchMovies);
+// Fetch genres from API and store in a dictionary
+const fetchGenres = async () => {
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}3/genre/movie/list?api_key=9fabcfbbc014bf7f64c9dcf89da12f67`
+    );
+    const genreList = response.data.genres;
+    genres.value = genreList.reduce((acc: Record<number, string>, genre: any) => {
+      acc[genre.id] = genre.name;
+      return acc;
+    }, {});
+  } catch (error) {
+    console.error("Error fetching genres:", error);
+  }
+};
+
+// Fetch data on component mount
+onMounted(async () => {
+  await fetchGenres();
+  await fetchMovies();
+});
 </script>
+
 <template>
   <swiper
     :slidesPerView="2.5"
@@ -29,10 +52,7 @@ onMounted(fetchMovies);
     :loop="true"
     :centeredSlides="true"
     :autoplay="{ delay: 2000, disableOnInteraction: false }"
-    :pagination="{
-            enabled: true,
-            clickable: true,
-          }"
+    :pagination="{ enabled: true, clickable: true }"
     :modules="[Pagination, Autoplay]"
     class="mySwiper"
   >
@@ -48,19 +68,22 @@ onMounted(fetchMovies);
         <div class="h-[90%] w-full flex flex-col gap-1 bg-black p-6 text-white">
           <div class="flex items-center gap-2">
             <span class="i-ph-star-fill block h-4 w-4 text-[#FFB802]" />
-              <span class="text-lg font-semibold">⭐ {{ movie.vote_average.toFixed(1) }}</span>
-              </div>
-              <h1 class="line-clamp-2 text-2xl font-semibold">
-                {{ movie.title }}
-              </h1>
-              <div class="flex items-center gap-1.5">
-                <span class="text-lg">{{ movie.release_date.split('-')[0] }} • {{ movie.genre_ids[0] || "Unknown" }}</span>
-                <span class="inline-block h-1.5 w-1.5 rounded-full bg-white/50" />
-                <span class="text-lg">aaa</span>
-              </div>
-              <div class="line-clamp-7 text-xs leading-5">
-                {{ movie.overview }}
-              </div>
+            <span class="text-lg font-semibold">⭐ {{ movie.vote_average.toFixed(1) }}</span>
+          </div>
+          <h1 class="line-clamp-2 text-2xl font-semibold">
+            {{ movie.title }}
+          </h1>
+          <div class="flex items-center gap-1.5">
+            <span class="text-lg">
+              {{ movie.release_date.split("-")[0] }} •
+              {{
+                genres[movie.genre_ids[0]] || "Unknown"
+              }}
+            </span>
+          </div>
+          <div class="line-clamp-7 text-xs leading-5">
+            {{ movie.overview }}
+          </div>
         </div>
       </div>
     </swiper-slide>
@@ -71,4 +94,3 @@ onMounted(fetchMovies);
     </div>
   </swiper>
 </template>
-
